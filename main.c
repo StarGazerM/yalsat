@@ -598,6 +598,10 @@ static void usage () {
   printf ("\n");
   printf ("The following options allow to simulate other solvers:\n");
   printf ("\n");
+  printf ("  --probsat  simulate probsat algorithm\n");
+  printf ("\n");
+  printf ("             "
+          "(eager=1,fixed=1,pick=0,restart=0,uni=1,walk=0,weight=1)\n");
   printf ("  --walksat  simulate classical walksat algorithm\n");
   printf ("             "
           "(eager=1,fixed=1,pick=0,restart=0,uni=1,walk=1,weight=1)\n");
@@ -693,7 +697,15 @@ int main (int argc, char** argv) {
     else if (!strcmp (argv[i], "--rfs")) setopt ("pick", 3);
     else if (!strcmp (argv[i], "--pfs")) setopt ("pick", -1);
     else if (!strcmp (argv[i], "--ufs")) setopt ("pick", 0);
-    else if (!strcmp (argv[i], "--walksat")) {
+    else if (!strcmp (argv[i], "--probsat")) {
+      setopt ("eager", 0);
+      setopt ("fixed", 1);
+      setopt ("pick", 0);
+      setopt ("restart", 0);
+      setopt ("uni", 1);
+      setopt ("walk", 0);
+      setopt ("weight", 1);
+    } else if (!strcmp (argv[i], "--walksat")) {
       setopt ("eager", 1);
       setopt ("fixed", 1);
       setopt ("pick", 0);
