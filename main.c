@@ -599,9 +599,9 @@ static void usage () {
   printf ("The following options allow to simulate other solvers:\n");
   printf ("\n");
   printf ("  --probsat  simulate probsat algorithm\n");
-  printf ("\n");
   printf ("             "
           "(eager=1,fixed=1,pick=0,restart=0,uni=1,walk=0,weight=1)\n");
+  printf ("\n");
   printf ("  --walksat  simulate classical walksat algorithm\n");
   printf ("             "
           "(eager=1,fixed=1,pick=0,restart=0,uni=1,walk=1,weight=1)\n");
