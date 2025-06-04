@@ -28,7 +28,6 @@
 
 #define YALS_INT64_MAX		(0x7fffffffffffffffll)
 #define YALS_DEFAULT_PREFIX	"c "
-#define YALSTIMING
 /*------------------------------------------------------------------------*/
 
 #define NEWN(P,N) \
@@ -428,19 +427,8 @@ struct Yals {
 };
 
 #ifdef YALSTIMING
-// detail running time of each operation
-// in nanoseconds
-struct TimeStats {
-  struct timespec total;
-  struct timespec flip;
-  struct timespec pick;
-  struct timespec clause;
-  struct timespec connect;
-  struct timespec preprocess;
-  struct timespec malloc_time;
-};
 
-static struct TimeStats time_stats;
+// static struct TimeStats time_stats;
 
 // Helper function to get current time with nanosecond precision
 static void get_current_time(struct timespec *ts) {
@@ -448,19 +436,40 @@ static void get_current_time(struct timespec *ts) {
 }
 
 // Helper function to add two timespec values
-static void add_timespec(struct timespec *result, const struct timespec *a, const struct timespec *b) {
-  result->tv_sec = a->tv_sec + b->tv_sec;
-  result->tv_nsec = a->tv_nsec + b->tv_nsec;
+static void accu_timespec(struct timespec *result, const struct timespec *a, const struct timespec *b) {
+  result->tv_sec += a->tv_sec + b->tv_sec;
+  result->tv_nsec += a->tv_nsec + b->tv_nsec;
   if (result->tv_nsec >= 1000000000) {
     result->tv_sec++;
     result->tv_nsec -= 1000000000;
   }
 }
 
+void init_timespec() {
+  time_stats.total.tv_nsec = 0;
+  time_stats.total.tv_sec = 0;
+  time_stats.flip.tv_nsec = 0;
+  time_stats.flip.tv_sec = 0;
+  time_stats.pick.tv_nsec = 0;
+  time_stats.pick.tv_sec = 0;
+  time_stats.malloc_time.tv_nsec = 0;
+  time_stats.malloc_time.tv_sec = 0;
+  time_stats.connect.tv_nsec = 0;
+  time_stats.connect.tv_sec = 0;
+  time_stats.clause.tv_nsec = 0;
+  time_stats.clause.tv_sec = 0;
+  time_stats.preprocess.tv_nsec = 0;
+  time_stats.preprocess.tv_sec = 0;
+  time_stats.break_clauses.tv_nsec = 0;
+  time_stats.break_clauses.tv_sec = 0;
+  time_stats.make_clauses.tv_nsec = 0;
+  time_stats.make_clauses.tv_sec = 0;
+}
+
 // Helper function to subtract two timespec values
 static void sub_timespec(struct timespec *result, const struct timespec *a, const struct timespec *b) {
-  result->tv_sec = a->tv_sec - b->tv_sec;
-  result->tv_nsec = a->tv_nsec - b->tv_nsec;
+  result->tv_sec += a->tv_sec - b->tv_sec;
+  result->tv_nsec += a->tv_nsec - b->tv_nsec;
   if (result->tv_nsec < 0) {
     result->tv_sec--;
     result->tv_nsec += 1000000000;
@@ -472,18 +481,9 @@ static double timespec_to_seconds(const struct timespec *ts) {
   return (double)ts->tv_sec + (double)ts->tv_nsec / 1000000000.0;
 }
 
-#define TIMING_START(ts) get_current_time(&ts)
-#define TIMING_END(start, end, stat) do { \
-  get_current_time(&end); \
-  sub_timespec(&time_stats.stat, &end, &start); \
-} while(0)
-
-#define TIMING_PRINT(stat, total) do { \
-  yals_msg(yals, 0, \
-    #stat " time %.3f seconds (%.1f%%)", \
-    timespec_to_seconds(&time_stats.stat), \
-    yals_pct(timespec_to_seconds(&time_stats.stat), timespec_to_seconds(&time_stats.total))); \
-} while(0)
+void end_program_timer() {
+  TIMING_END(program_start, program_end, total); 
+}
 
 #else
 #define TIMING_START(ts) ((void)0)
@@ -1612,22 +1612,38 @@ static void yals_update_minimum (Yals * yals) {
 }
 
 static void yals_flip (Yals * yals) {
-  struct timespec start, end;
-#ifdef YALSTIMING
-  TIMING_START(start);
-#endif
-
   int cidx = yals_pick_clause (yals);
   int lit = yals_pick_literal (yals, cidx);
+#ifdef YALSTIMING
+  struct timespec start_flip, end_flip;
+  TIMING_START(start_flip);
+#endif
   yals->stats.flips++;
   yals->stats.unsum += yals_nunsat (yals);
   yals_flip_value_of_lit (yals, lit);
-  yals_make_clauses_after_flipping_lit (yals, lit);
-  yals_break_clauses_after_flipping_lit (yals, lit);
-  yals_update_minimum (yals);
 #ifdef YALSTIMING
-  TIMING_END(start, end, flip);
+  TIMING_END(start_flip, end_flip, flip);
 #endif
+
+#ifdef YALSTIMING
+  struct timespec start_make, end_make;
+  TIMING_START(start_make);
+#endif
+  yals_make_clauses_after_flipping_lit (yals, lit);
+#ifdef YALSTIMING
+  TIMING_END(start_make, end_make, make_clauses);
+#endif
+
+#ifdef YALSTIMING
+  struct timespec start_break, end_break;
+  TIMING_START(start_break);
+#endif
+  yals_break_clauses_after_flipping_lit (yals, lit);
+#ifdef YALSTIMING
+  TIMING_END(start_break, end_break, break_clauses);
+#endif
+
+  yals_update_minimum (yals);
 }
 
 /*------------------------------------------------------------------------*/
@@ -3108,9 +3124,10 @@ DONE:
 
 int yals_sat (Yals * yals) {
   int res, limited = 0, lkhd;
-  struct timespec start, end;
 #ifdef YALSTIMING
-  TIMING_START(start);
+  init_timespec();
+  // struct timespec start, end;
+  TIMING_START(program_start);
 #endif
 
   if (!EMPTY (yals->clause))
@@ -3131,13 +3148,13 @@ int yals_sat (Yals * yals) {
     TIMING_END(prep_start, prep_end, preprocess);
 #endif
     
-    if (yals->mt) {
+    // if (yals->mt) {
 #ifdef YALSTIMING
       yals_msg (yals, 1,
         "preprocessing time %.3f seconds",
         timespec_to_seconds(&prep_end) - timespec_to_seconds(&prep_start));
 #endif
-    }
+    // }
   }
 
   yals->stats.time.entered = yals_time (yals);
@@ -3175,6 +3192,8 @@ int yals_sat (Yals * yals) {
 
   yals_outer_loop (yals);
 
+  TIMING_END(program_start, program_end, total);
+
   assert (!yals->mt);
   if (!yals->stats.best) {
     yals_print_strategy (yals, "winning strategy:", 1);
@@ -3189,37 +3208,6 @@ int yals_sat (Yals * yals) {
 
   if (yals->opts.setfpu.val) yals_reset_fpu (yals);
   yals_flush_time (yals);
-
-#ifdef YALSTIMING
-  TIMING_END(start, end, total);
-  yals_msg (yals, 0,
-    "total time %.3f seconds",
-    timespec_to_seconds(&time_stats.total));
-  yals_msg (yals, 0,
-    "preprocessing time %.3f seconds (%.1f%%)",
-    timespec_to_seconds(&time_stats.preprocess),
-    yals_pct(timespec_to_seconds(&time_stats.preprocess), timespec_to_seconds(&time_stats.total)));
-  yals_msg (yals, 0,
-    "connection time %.3f seconds (%.1f%%)",
-    timespec_to_seconds(&time_stats.connect),
-    yals_pct(timespec_to_seconds(&time_stats.connect), timespec_to_seconds(&time_stats.total)));
-  yals_msg (yals, 0,
-    "flip time %.3f seconds (%.1f%%)",
-    timespec_to_seconds(&time_stats.flip),
-    yals_pct(timespec_to_seconds(&time_stats.flip), timespec_to_seconds(&time_stats.total)));
-  yals_msg (yals, 0,
-    "pick time %.3f seconds (%.1f%%)",
-    timespec_to_seconds(&time_stats.pick),
-    yals_pct(timespec_to_seconds(&time_stats.pick), timespec_to_seconds(&time_stats.total)));
-  yals_msg (yals, 0,
-    "clause time %.3f seconds (%.1f%%)",
-    timespec_to_seconds(&time_stats.clause),
-    yals_pct(timespec_to_seconds(&time_stats.clause), timespec_to_seconds(&time_stats.total)));
-  yals_msg (yals, 0,
-    "malloc time %.3f seconds (%.1f%%)",
-    timespec_to_seconds(&time_stats.malloc_time),
-    yals_pct(timespec_to_seconds(&time_stats.malloc_time), timespec_to_seconds(&time_stats.total)));
-#endif
   return res;
 }
 
@@ -3364,40 +3352,41 @@ void yals_stats (Yals * yals) {
     yals_pct (s->unsum, s->flips));
 
 #ifndef NYALSTATS
-  if (s->inc && s->dec) {
-    double suminc, sumdec, f = s->flips;
-    int64_t ninc, ndec, ninclarge, ndeclarge;
-    int len;
-    assert (!s->dec[0]);
-    assert (!s->inc[yals->maxlen]);
-    suminc = sumdec = ninc = ndec = ndeclarge = ninclarge = 0;
-    for (len = 0; len <= yals->maxlen; len++) {
-      int64_t inc = s->inc[len];
-      int64_t dec = s->dec[len];
-      ninc += inc, ndec += dec;
-      suminc += len * inc, sumdec += len * dec;
-      if (len > 2) ninclarge += inc;
-      if (len > 3) ndeclarge += dec;
-    }
-    yals_msg (yals, 0,
-      "%lld incs %.3f avg satcnt, %lld decs %.3f avg satcnt",
-      (long long) ninc, yals_avg (suminc, ninc),
-      (long long) ndec, yals_avg (sumdec, ndec));
-    yals_msg (yals, 0,
-      "inc0 %.2f %.2f%%, inc1 %.2f %.2f%%, "
-      "inc2 %.2f %.2f%%, incl %.2f %.2f%%",
-      yals_avg (s->inc[0], f), yals_pct (s->inc[0], ninc),
-      yals_avg (s->inc[1], f), yals_pct (s->inc[1], ninc),
-      yals_avg (s->inc[2], f), yals_pct (s->inc[2], ninc),
-      yals_avg (ninclarge, f), yals_pct (ninclarge, ninc));
-    yals_msg (yals, 0,
-      "dec1 %.2f %.2f%%, dec2 %.2f %.2f%%, "
-      "dec3 %.2f %.2f%%, decl %.2f %.2f%%",
-      yals_avg ( s->dec[1], f), yals_pct (s->dec[1], ndec),
-      yals_avg (s->dec[2], f), yals_pct (s->dec[2], ndec),
-      yals_avg (s->dec[3], f), yals_pct (s->dec[3], ndec),
-      yals_avg (ndeclarge, f), yals_pct (ndeclarge, ndec));
-  }
+  // if (s->inc && s->dec) {
+  //   double suminc, sumdec, f = s->flips;
+  //   int64_t ninc, ndec, ninclarge, ndeclarge;
+  //   int len;
+  //   assert (!s->dec[0]);
+  //   assert (!s->inc[yals->maxlen]);
+  //   suminc = sumdec = ninc = ndec = ndeclarge = ninclarge = 0;
+  //   for (len = 0; len <= yals->maxlen; len++) {
+  //     int64_t inc = s->inc[len];
+  //     int64_t dec = s->dec[len];
+  //     ninc += inc, ndec += dec;
+  //     suminc += len * inc, sumdec += len * dec;
+  //     if (len > 2) ninclarge += inc;
+  //     if (len > 3) ndeclarge += dec;
+  //   }
+  //   yals_msg (yals, 0,
+  //     "%lld incs %.3f avg satcnt, %lld decs %.3f avg satcnt",
+  //     (long long) ninc, yals_avg (suminc, ninc),
+  //     (long long) ndec, yals_avg (sumdec, ndec));
+  //   yals_msg (yals, 0,
+  //     "inc0 %.2f %.2f%%, inc1 %.2f %.2f%%, "
+  //     "inc2 %.2f %.2f%%, incl %.2f %.2f%%",
+  //     yals_avg (s->inc[0], f), yals_pct (s->inc[0], ninc),
+  //     yals_avg (s->inc[1], f), yals_pct (s->inc[1], ninc),
+  //     yals_avg (s->inc[2], f), yals_pct (s->inc[2], ninc),
+  //     yals_avg (ninclarge, f), yals_pct (ninclarge, ninc));
+  //   yals_msg (yals, 0,
+  //     "dec1 %.2f %.2f%%, dec2 %.2f %.2f%%, "
+  //     "dec3 %.2f %.2f%%, decl %.2f %.2f%%",
+  //     yals_avg ( s->dec[1], f), yals_pct (s->dec[1], ndec),
+  //     yals_avg (s->dec[2], f), yals_pct (s->dec[2], ndec),
+  //     yals_avg (s->dec[3], f), yals_pct (s->dec[3], ndec),
+  //     yals_avg (ndeclarge, f
+  // ), yals_pct (ndeclarge, ndec));
+  // }
 #endif
 
 #ifndef NYALSMEMS
@@ -3451,4 +3440,42 @@ void yals_stats (Yals * yals) {
   yals_msg (yals, 0,
     "minimum %d hit %lld times, maximum %d",
     s->best, (long long) s->hits, s->worst);
+
+#ifdef YALSTIMING
+  // TIMING_END(start, end, total);
+  // yals_msg (yals, 0,
+  //   "total time %.3f seconds",
+  //   timespec_to_seconds(&time_stats.total));
+  yals_msg (yals, 0,
+    "preprocessing time %.3f nano seconds",
+    timespec_to_seconds(&time_stats.preprocess));
+  yals_msg (yals, 0,
+    "connection time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.connect),
+    yals_pct(timespec_to_seconds(&time_stats.connect), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
+    "flip time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.flip),
+    yals_pct(timespec_to_seconds(&time_stats.flip), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
+    "make clauses during flip time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.make_clauses),
+    yals_pct(timespec_to_seconds(&time_stats.make_clauses), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
+    "break clauses during flip time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.break_clauses),
+    yals_pct(timespec_to_seconds(&time_stats.break_clauses), timespec_to_seconds(&time_stats.total)));  
+  yals_msg (yals, 0,
+    "pick time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.pick),
+    yals_pct(timespec_to_seconds(&time_stats.pick), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
+    "clause time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.clause),
+    yals_pct(timespec_to_seconds(&time_stats.clause), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
+    "malloc time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.malloc_time),
+    yals_pct(timespec_to_seconds(&time_stats.malloc_time), timespec_to_seconds(&time_stats.total)));
+#endif
 }

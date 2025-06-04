@@ -307,6 +307,7 @@ static void resetsighandlers (void) {
 static volatile int caughtsig;
 
 static void catchsig (int sig) {
+  end_program_timer();
   if (!caughtsig) {
     fputs ("c\n", stdout);
     if (verbose) {
