@@ -28,8 +28,8 @@ CompileFlags:
     - "-I/home/ysun799/workspace/yalgsat/build/_deps/fmt-src/include"
     - "-I/home/ysun799/workspace/yalgsat/build/_deps/nvtx3-src/c/include"
     - "-I/home/ysun799/workspace/yalgsat/build/_deps/spdlog-src/include"
-    - "-D__CUDACC_VER_MAJOR__=12"
-    - "-D__CUDACC_VER_MINOR__=0"
+    # - "-D__CUDACC_VER_MAJOR__=12"
+    # - "-D__CUDACC_VER_MINOR__=0"
 
 
 ---
@@ -57,6 +57,7 @@ CompileFlags:
     - "--expt-relaxed-constexpr"
     - "-forward-unknown-to-host-compiler"
     - "-Werror=cross-execution-space-call"
+    - "-Xcompiler=-fPIC"
 Hover:
   ShowAKA: No
 Diagnostics:
