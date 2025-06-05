@@ -1,5 +1,4 @@
 #include "config.h"
-#include "cflags.h"
 
 #define YALSINTERNAL
 #include "yils.h"

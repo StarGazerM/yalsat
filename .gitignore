@@ -5,3 +5,6 @@ palsat
 makefile
 cflags.h
 config.h
+build/
+.cache/
+.clangd

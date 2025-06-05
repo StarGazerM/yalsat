@@ -8,4 +8,7 @@ with debugging, checking and logging support.
 
 This will build both the library `libyals.a` with its API in file [yals.h](yals.h) and the stand-alone SAT solver `yalsat` and its multi-threaded parallel version `palsat`.
 
+## CHANGES
+
+- 2025-06-05: Migrated Project to CMake, prepared for RAPIDS/CUDA integration.
 
