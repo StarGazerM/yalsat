@@ -1,0 +1,126 @@
+c YalSAT Yet Another Local Search Solver
+c Sequential Standalone Version
+c Version 1.0.1 d4e790069f023064b9d7cfabd252f7b0f788e5d3
+c Copyright (C) 2021-2022 Armin Biere University of Freiburg
+c Copyright (C) 2013-2021 Armin Biere, Johannes Kepler University Linz
+c Released Thu Jun  5 01:48:06 PM UTC 2025
+c Compiled Thu Jun  5 01:48:06 PM UTC 2025
+c Linux ctoh100gpu1 5.15.0-139-generic x86_64
+c CC gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
+c CFLAGS -Wall -g3
+c --best=0
+c --cached=1
+c --cacheduni=0
+c --cachemax=1024
+c --cachemin=1
+c --cb=0
+c --correct=0
+c --crit=1
+c --defrag=1
+c --eager=0
+c --fixed=1
+c --geomfreq=66
+c --hitlim=-1
+c --keep=0
+c --minchunksize=256
+c --pick=0
+c --pol=0
+c --prep=1
+c --rbfsrate=10
+c --reluctant=1
+c --restart=0
+c --restartouter=1
+c --restartouterfactor=100
+c --setfpu=1
+c --target=0
+c --termint=1000
+c --toggleuniform=0
+c --unfairfreq=50
+c --uni=1
+c --unipick=-1
+c --unirestarts=0
+c --verbose=1
+c --walk=0
+c --walkprobability=50
+c --weight=1
+c --witness=1
+c --logging=0
+c --checking=0
+c no seed specified (using default 0)
+c no flips limit set (by default)
+c no mems limit set (by default)
+c parsing '/home/ysun799/dataset/sat-comp-2017/random/0cf082f66100e4a2488d7a74e303c00d-unif-k7-r69.0-v50000-c3450000-S4528072599893046293.cnf'
+c parsed header 'p cnf 50000 3450000'
+c clause variable ratio 69.00
+c finished parsing after 1.85 seconds
+c allocated 128.1 MB after parsing
+c set FPU mode to use double precision
+c found 0 binary, 0 ternary and 3450000 large clauses
+c size of literal stack 27600000 (27600000 for large clauses only)
+c connecting 3450000 clauses
+c 50000 variables used out of 50001, 1 do not occur 0%
+c all 3450000 clauses are of uniform length 7
+c using uniform strategy for clauses of length 7
+c clause variable ratio 69.000 = 3450000 / 50000
+c average literal occurrence 482.99 (min 393, max 572)
+c picking clause by pseudo BFS strategy
+c using stack for unsat clauses
+c 1563 x 32-bit words per assignment (6252 bytes = 6 KB)
+c need 1 bytes per clause for counting satisfied literals
+c dynamically computing break values on-the-fly using critical literals
+c exponential base cb = 7.400000 for maxlen 7
+c exp2(<= -1573) = 4.94066e-324
+c pow(7.400000,(<= -545)) = 1.4822e-323
+c starting unlimited search
+c initial outer restart limit at 2500000 flips
+c picking new random assignment
+c forcing 0 initial phases
+c minimum 27286 : best 27286 (tmp 27286), kflips 0, 1.42 sec, 0.00 kflips/sec
+c minimum 13642 : best 13642 (tmp 13642), kflips 7, 1.67 sec, 4.02 kflips/sec
+c minimum 6821 : best 6821 (tmp 6821), kflips 21, 2.14 sec, 10.00 kflips/sec
+c minimum 3409 : best 3409 (tmp 3409), kflips 65, 3.54 sec, 18.49 kflips/sec
+c minimum 1704 : best 1704 (tmp 1704), kflips 234, 8.92 sec, 26.21 kflips/sec
+c minimum 852 : best 852 (tmp 852), kflips 594, 20.34 sec, 29.21 kflips/sec
+c minimum 426 : best 426 (tmp 426), kflips 1816, 58.23 sec, 31.18 kflips/sec
+c starting next outer restart round 1 after 79.21 seconds
+c current seed 17115006219927339912
+c next outer restart limit 5000000
+c reset 0 cache lines
+c picking new random assignment
+c forcing 0 initial phases
+c
+c UNKNOWN
+c 
+c final minimum of 369 unsatisfied clauses
+c restart time 0.000 seconds 0%
+c 0 inner restarts, 0 maximum interval
+c 1 outer restarts, 5000000 maximum interval
+c default strategy 2 100%, random strategy 0 0%
+c picked best=0 cached=0 keep=0 pos=0 neg=0 rnd=2
+c cached 0 assignments, 0 replaced 0%, 0 skipped, 0 size
+c 0 sigchecks, 0 negative 0%, 0 positive 0%, 0 false 0%
+c maximum unsat stack size 32768
+c 4366473 broken, 1.33 broken/flip, 4419783 made, 1.35 made/flip
+c 18 maximum 0 minimum sum of weighted breaks
+c 113276.579 unsat clauses on average
+c megamems: 3367 all 100%, 36 lits 1%, 1582 crit 47%, 161 weight 5%
+c megamems: 7 occs 0%, 0 read 0%, 1582 update 47%
+c 32.2 million mems per second, 1025.1 mems per flip
+c 104.7 seconds searching, 241.9 MB maximally allocated (253639319 bytes)
+c 3284522 flips, 31.37 thousand flips per second
+c 0 eager best break flips 0.0%
+c 0 random walks 0.0%
+c minimum 369 hit 1 times, maximum 27286
+c preprocessing time 0.000 nano seconds
+c connection time 0.000 seconds (0.0%)
+c flip time 0.372 seconds (0.4%)
+c Queue time 0.890 seconds (0.9%)
+c Set Counter time 56.849 seconds (54.3%)
+c make clauses during flip time 79.831 seconds (76.3%)
+c break clauses during flip time 19.911 seconds (19.0%)
+c pick time 1.683 seconds (1.6%)
+c clause time 0.494 seconds (0.5%)
+c malloc time 0.000 seconds (0.0%)
+c Total Flip : 3284522, Total make : 790858933
+c total process time of 106.54 seconds
+c maximally allocated 241.9 MB

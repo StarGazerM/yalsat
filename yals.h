@@ -3,6 +3,7 @@
 
 /*------------------------------------------------------------------------*/
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -84,6 +85,10 @@ struct TimeStats {
   struct timespec malloc_time;
   struct timespec make_clauses;
   struct timespec break_clauses;
+  struct timespec queue_op;
+  struct timespec setcnt;
+  uint64_t total_flip;
+  uint64_t total_flip_make;
 };
 
 static struct TimeStats time_stats;

@@ -464,6 +464,8 @@ void init_timespec() {
   time_stats.break_clauses.tv_sec = 0;
   time_stats.make_clauses.tv_nsec = 0;
   time_stats.make_clauses.tv_sec = 0;
+  time_stats.total_flip_make = 0;
+  time_stats.total_flip = 0;
 }
 
 // Helper function to subtract two timespec values
@@ -842,11 +844,18 @@ static void yals_setsatcnt (Yals * yals, int cidx, unsigned satcnt) {
 }
 
 static unsigned yals_incsatcnt (Yals * yals, int cidx, int lit, int len) {
+#ifdef YALSTIMING
+  struct timespec start_, end_;
+  TIMING_START(start_);
+#endif
   unsigned res;
   assert_valid_cidx (cidx);
   assert_valid_len (len);
   if (yals->satcntbytes == 1) {
-    res = yals->satcnt1[cidx]++;
+    res = yals->satcnt1[cidx]++; 
+    // "++" return 1 means some var assigned before lit (in yals->crit[cidx]) **was** a cratical var
+    // flip lit would make it not critical anymore, we will need decrease **previous** lit's score.
+    // "++" return 0 means lit is the critical var could flip a clause, we need increase lit's score.
     assert (yals->satcnt1[cidx]);
   } else if (yals->satcntbytes == 2) {
     res = yals->satcnt2[cidx]++;
@@ -862,9 +871,13 @@ static unsigned yals_incsatcnt (Yals * yals, int cidx, int lit, int len) {
   if (yals->crit) {
     if (res == 1) yals_dec_weighted_break (yals, yals->crit[cidx], len);
     else if (!res) yals_inc_weighted_break (yals, lit, len);
+    // keep xor, so that if a var is flipped back it will be reversed.
     yals->crit[cidx] ^= lit;
     assert (res || yals->crit[cidx] == lit);
   }
+#ifdef YALSTIMING
+  TIMING_END(start_, end_, setcnt);
+#endif
   return res;
 }
 
@@ -1447,10 +1460,17 @@ static void yals_dequeue_stack (Yals * yals, int cidx) {
 }
 
 static void yals_dequeue (Yals * yals, int cidx) {
+#ifdef YALSTIMING
+  struct timespec start_, end_;
+  TIMING_START(start_);
+#endif
   LOG ("dequeue %d", cidx);
   assert_valid_cidx (cidx);
   if (yals->unsat.usequeue) yals_dequeue_queue (yals, cidx);
   else yals_dequeue_stack (yals, cidx);
+#ifdef YALSTIMING
+  TIMING_END(start_, end_, queue_op);
+#endif
 }
 
 static void yals_new_chunk (Yals * yals) {
@@ -1520,10 +1540,17 @@ static void yals_enqueue_stack (Yals * yals, int cidx) {
 }
 
 static void yals_enqueue (Yals * yals, int cidx) {
+#ifdef YALSTIMING
+  struct timespec start_, end_;
+  TIMING_START(start_);
+#endif
   LOG ("enqueue %d", cidx);
   assert_valid_cidx (cidx);
   if (yals->unsat.usequeue) yals_enqueue_queue (yals, cidx);
   else yals_enqueue_stack (yals, cidx);
+#ifdef YALSTIMING
+  TIMING_END(start_, end_, queue_op);
+#endif
 }
 
 static void yals_reset_unsat_stack (Yals * yals) {
@@ -1547,14 +1574,17 @@ static void yals_reset_unsat (Yals * yals) {
 static void yals_make_clauses_after_flipping_lit (Yals * yals, int lit) {
   const int * p, * occs;
   int cidx, len, occ;
+  time_stats.total_flip++;
 #if !defined(NDEBUG) || !defined(NYALSTATS)
   int made = 0;
 #endif
   assert (yals_val (yals, lit));
   occs = yals_occs (yals, lit);
   for (p = occs; (occ = *p) >= 0; p++) {
+    // get clause from clause database
     len = occ & LENMASK;
     cidx = occ >> LENSHIFT;
+    time_stats.total_flip_make++;
     if (yals_incsatcnt (yals, cidx, lit, len)) continue;
     yals_dequeue (yals, cidx);
     LOGCIDX (cidx, "made");
@@ -3458,6 +3488,14 @@ void yals_stats (Yals * yals) {
     timespec_to_seconds(&time_stats.flip),
     yals_pct(timespec_to_seconds(&time_stats.flip), timespec_to_seconds(&time_stats.total)));
   yals_msg (yals, 0,
+    "Queue time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.queue_op),
+    yals_pct(timespec_to_seconds(&time_stats.queue_op), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
+    "Set Counter time %.3f seconds (%.1f%%)",
+    timespec_to_seconds(&time_stats.setcnt),
+    yals_pct(timespec_to_seconds(&time_stats.setcnt), timespec_to_seconds(&time_stats.total)));
+  yals_msg (yals, 0,
     "make clauses during flip time %.3f seconds (%.1f%%)",
     timespec_to_seconds(&time_stats.make_clauses),
     yals_pct(timespec_to_seconds(&time_stats.make_clauses), timespec_to_seconds(&time_stats.total)));
@@ -3477,5 +3515,7 @@ void yals_stats (Yals * yals) {
     "malloc time %.3f seconds (%.1f%%)",
     timespec_to_seconds(&time_stats.malloc_time),
     yals_pct(timespec_to_seconds(&time_stats.malloc_time), timespec_to_seconds(&time_stats.total)));
+  yals_msg(yals, 0,
+    "Total Flip : %ld, Total make : %ld", time_stats.total_flip, time_stats.total_flip_make);
 #endif
 }
