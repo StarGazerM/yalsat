@@ -1942,6 +1942,7 @@ static void yals_connect (Yals * yals) {
     }
   }
 
+  NEWN(yals->occs_bucket_sizes, 2*nvars);
   for (int i = 1; i < nvars; i++) {
     yals->occs_bucket_sizes[i * 2] = count[i];
     yals->occs_bucket_sizes[i * 2 + 1] = count[-i];
