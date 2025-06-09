@@ -81,11 +81,11 @@ struct TimeStats {
   struct timespec pick;
   struct timespec clause;
   struct timespec connect;
-  struct timespec preprocess;
+  struct timespec update_picked;
   struct timespec malloc_time;
   struct timespec make_clauses;
   struct timespec break_clauses;
-  struct timespec queue_op;
+  struct timespec minimum;
   struct timespec setcnt;
   uint64_t total_flip;
   uint64_t total_flip_make;
