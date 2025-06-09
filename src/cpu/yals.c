@@ -424,10 +424,10 @@ static void yals_setsatcnt (Yals * yals, int cidx, unsigned satcnt) {
 }
 
 static unsigned yals_incsatcnt (Yals * yals, int cidx, int lit, int len) {
-#ifdef YALSTIMING
-  struct timespec start_, end_;
-  TIMING_START(start_);
-#endif
+// #ifdef YALSTIMING
+//   struct timespec start_, end_;
+//   TIMING_START(start_);
+// #endif
   unsigned res;
   assert_valid_cidx (cidx);
   assert_valid_len (len);
@@ -455,9 +455,9 @@ static unsigned yals_incsatcnt (Yals * yals, int cidx, int lit, int len) {
     yals->crit[cidx] ^= lit;
     assert (res || yals->crit[cidx] == lit);
   }
-#ifdef YALSTIMING
-  TIMING_END(start_, end_, setcnt);
-#endif
+// #ifdef YALSTIMING
+//   TIMING_END(start_, end_, setcnt);
+// #endif
   return res;
 }
 

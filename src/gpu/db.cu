@@ -14,7 +14,7 @@
 #include "gpu/gpu.h"
 #include "gpu/yalsg.cuh"
 #include "rmm/device_vector.hpp"
-#include "yils.h"
+// #include "yils.h"
 
 #include "rmm/mr/device/per_device_resource.hpp"
 #include <cstdint>
@@ -144,6 +144,7 @@ void yalsg_load_to_device(Yalsg *yalsg) {
   yalsg->cands.resize(size_of_cands);
   cudaMemcpy(yalsg->cands.data().get(), yalsg->yals->cands.start,
              size_of_cands * sizeof(int), cudaMemcpyHostToDevice);
+
   
   // TODO: check all cache related vectors ds
 }

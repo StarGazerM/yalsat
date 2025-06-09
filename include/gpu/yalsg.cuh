@@ -11,9 +11,7 @@
 
 #pragma once
 
-#include "yals.h"
 #include "yils.h"
-#include <cstdint>
 #include <rmm/device_vector.hpp>
 #include <rmm/mr/device/pool_memory_resource.hpp>
 #include <stdint.h>

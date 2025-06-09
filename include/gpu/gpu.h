@@ -30,6 +30,16 @@ Yalsg * yalsg_new(Yals * yals);
 
 void yalsg_load_to_device(Yalsg * yalsg);
 
+void yalsg_flip(Yalsg * yalsg);
+
+int yalsg_pick_clause(Yalsg * yalsg);
+int yalsg_pick_literal(Yalsg * yalsg, int cidx);
+
+
+
+// These two functions are most time consuming
+void yalsg_make_clauses_after_flipping_lit(Yalsg * yalsg, int lit);
+void yalsg_break_clauses_after_flipping_lit(Yalsg * yalsg, int lit);
 
 #ifdef __cplusplus
 }
